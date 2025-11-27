@@ -1,0 +1,55 @@
+# .github/workflows/ci-cd-recommendation.yml
+name: CI/CD for Recommendation Service
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'recommendation_service/**' 
+
+jobs:
+  build-and-push-to-yc:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./recommendation_service
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build docker image
+      run: |
+        docker build . --file Dockerfile --tag cr.yandex/${{ secrets.YC_REGISTRY_ID }}/recommendation-service:latest
+
+    - name: Login to YC Registry
+      uses: docker/login-action@v3
+      with:
+        registry: cr.yandex
+        username: json_key
+        password: ${{ secrets.YC_KEYS }}
+
+    - name: Push image to YC Registry
+      run: |
+        docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/recommendation-service:latest
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [build-and-push-to-yc] 
+
+    steps:
+    - name: Deploy serverless container
+      uses: yc-actions/yc-sls-container-deploy@v1
+      with:
+        yc-sa-json-credentials: ${{ secrets.YC_KEYS }}
+        container-name: ${{ secrets.YC_CONTAINER_NAME }}
+        folder-id: ${{ secrets.YC_FOLDER_ID }}
+        revision-image-url: cr.yandex/${{ secrets.YC_REGISTRY_ID }}/recommendation-service:latest
+        revision-service-account-id: ${{ secrets.YC_SA_ID }}
+        revision-env: |
+          POSTGRES_URL=${{ secrets.ENV_POSTGRES_URL }}
+          AMQP_URL=${{ secrets.ENV_AMQP_URL }}
+        revision-cores: "1"
+        revision-memory: "128MB"
+        revision-core-fraction: "100"
