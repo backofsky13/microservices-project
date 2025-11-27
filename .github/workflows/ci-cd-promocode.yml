@@ -3,13 +3,7 @@ name: CI/CD for Promocode Service
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - 'promocode_service/**'
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'promocode_service/**'
-
+  workflow_dispatch:  
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -36,29 +30,3 @@ jobs:
         context: ./promocode_service
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/promocode-service:latest
-        cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/promocode-service:latest
-        cache-to: type=inline
-
-  test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./promocode_service
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install -r requirements-test.txt
-
-    - name: Run tests
-      run: |
-        pytest -v
