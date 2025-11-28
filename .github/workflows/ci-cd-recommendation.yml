@@ -36,6 +36,8 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     needs: [build-and-push-to-yc]
+    
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
     - name: Deploy serverless container
