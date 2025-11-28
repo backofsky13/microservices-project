@@ -9,6 +9,7 @@ on:
     branches: [ "main" ]
     paths:
       - 'recommendation_service/**'
+  workflow_dispatch:  
 
 jobs:
   test:
